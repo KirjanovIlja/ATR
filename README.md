@@ -1,2 +1,1 @@
-# ATR
-ATR project
+Run with **python main.py**
