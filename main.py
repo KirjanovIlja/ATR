@@ -1,52 +1,63 @@
-# import the opencv library
-import cv2
-import matplotlib.pyplot as plt
-import numpy as np
-
-# define a video capture object
-vid = cv2.VideoCapture(0)
+from my_lib import *
 
 
-def empty(a):
-    pass
+SIZE_OF_GRID = 8
+THRESH_LOW = 120
+THRESH_HIGH = 255
+SOURCE = "TEST_1.MOV"
 
-
-cv2.namedWindow("Parameters")
-cv2.resizeWindow("Parameters", 640, 100)
-
-cv2.createTrackbar("Treshold 1", "Parameters", 150, 255, empty)
-cv2.createTrackbar("Treshold 2", "Parameters", 255, 255, empty)
-
-
-def getContours(img, imgContour):
-    contours, hierarchy = cv2.findContours(
-        img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-
-    for cnt in contours:
-        area = cv2.contourArea(cnt)
-        if (area > 1000):
-            cv2.drawContours(imgContour, cnt, -1, (255, 0, 255), 3)
+ARUCO_ID_VALUE = {
+    100: "left",
+    101: "right",
+    102: "straight"
+}
 
 
 def main():
-    while(True):
+    vid = cv2.VideoCapture(SOURCE)
+    LAST_READED_ARUCO_ID = None
+
+    while(vid.isOpened()):
+
+        # Video reading
         ret, img = vid.read()
-        treshold1 = cv2.getTrackbarPos("Treshold 1", "Parameters")
-        treshold2 = cv2.getTrackbarPos("Treshold 2", "Parameters")
-        kernel = np.ones((5, 5))
-        imgBlur = cv2.GaussianBlur(img, (7, 7), 1)
-        imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        imgCanny = cv2.Canny(imgGray, treshold1, treshold2)
-        imgDil = cv2.dilate(imgCanny, kernel, iterations=1)
-        imgContour = img.copy()
+        cv2.imshow('Original', img)
 
-        getContours(imgDil, imgContour)
+        # Frame processing
+        img_lowered_resolution = lower_resolution(img, SIZE_OF_GRID)
+        img_lowered_resolution = cv2.threshold(
+            img_lowered_resolution, THRESH_LOW, THRESH_HIGH, cv2.THRESH_BINARY)[1]
 
-        cv2.imshow('3', imgContour)
+        # Retrieve the possible directions from input image
+        possible_directions_array = possible_directions(
+            img_lowered_resolution, SIZE_OF_GRID)
+
+        # Try to find, read and get Aruco code value
+        aruco_marker = find_aruco_markers(img)
+
+        # Check if Aruco marker is recognized, if so, get its value
+        if (aruco_marker[1] != None):
+
+            # Get direction from aruco marker id
+            aruco_marker_value = ARUCO_ID_VALUE[aruco_marker[1][0][0]]
+            LAST_READED_ARUCO_ID = aruco_marker_value
+
+            # If it's possible to go the direction aruco points to then send command to the robot
+            if (aruco_marker_value in possible_directions_array):
+                command_to_send_to_robot(aruco_marker_value)
+                exit()  # Exit when command is sent
+            else:
+                command_to_send_to_robot(
+                    "No Aruco markers. Going default way - straight")
+        else:
+            command_to_send_to_robot(
+                "No Aruco markers. Going default way - straight")
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
+        print("Last readed ARUCO marker ID: ", LAST_READED_ARUCO_ID)
+        clear_console()
     vid.release()
     cv2.destroyAllWindows()
 
