@@ -23,7 +23,7 @@ def lower_resolution(img, size=20):
     return result
 
 
-def centerRobot(mat):
+def center_robot(mat):
 
     pass
 
