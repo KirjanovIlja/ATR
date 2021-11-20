@@ -15,7 +15,7 @@ ARUCO_ID_VALUE = {
 
 def main():
     vid = cv2.VideoCapture(SOURCE)
-    LAST_READED_ARUCO_ID = None
+    LAST_READ_ARUCO_ID = None
 
     while(vid.isOpened()):
 
@@ -40,7 +40,7 @@ def main():
 
             # Get direction from aruco marker id
             aruco_marker_value = ARUCO_ID_VALUE[aruco_marker[1][0][0]]
-            LAST_READED_ARUCO_ID = aruco_marker_value
+            LAST_READ_ARUCO_ID = aruco_marker_value
 
             # If it's possible to go the direction aruco points to then send command to the robot
             if (aruco_marker_value in possible_directions_array):
@@ -56,7 +56,7 @@ def main():
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-        print("Last readed ARUCO marker ID: ", LAST_READED_ARUCO_ID)
+        print("Last read ARUCO marker ID: ", LAST_READ_ARUCO_ID)
         clear_console()
     vid.release()
     cv2.destroyAllWindows()
